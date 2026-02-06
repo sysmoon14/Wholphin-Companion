@@ -39,7 +39,7 @@ jobs:
           SHA256="$(sha256sum "$ZIP_NAME" | awk '{print $1}')"
           TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           CHANGELOG="$(printf '%s' "${{ github.event.release.body }}" | sed 's/\r//g')"
-          ./tools/update-manifest.sh "${{ env.VERSION }}" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
+          bash ./tools/update-manifest.sh "${{ env.VERSION }}" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
 
       - name: Commit manifest
         run: |
