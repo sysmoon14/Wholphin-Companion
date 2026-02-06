@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Package
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          ZIP_NAME="Wholphin-Companion_${VERSION}.zip"
+          zip -r "$ZIP_NAME" "bin/Release/net9.0/Wholphin Companion"
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Update manifest
+        run: |
+          ZIP_NAME="${{ env.ZIP_NAME }}"
+          SHA256="$(sha256sum "$ZIP_NAME" | awk '{print $1}')"
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          CHANGELOG="$(printf '%s' "${{ github.event.release.body }}" | sed 's/\r//g')"
+          ./tools/update-manifest.sh "${{ env.VERSION }}" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
+
+      - name: Commit manifest
+        run: |
+          if git status --porcelain | grep -q "manifest.json"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add manifest.json
+            git commit -m "Update manifest for ${GITHUB_REF_NAME}"
+            git push
+          fi
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: ${{ env.ZIP_NAME }}
