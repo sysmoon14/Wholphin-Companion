@@ -1,0 +1,20 @@
+[
+  {
+    "guid": "c54a4aaf-ffba-4a5a-b2de-8c0d38e21229",
+    "name": "Wholphin Companion",
+    "description": "Centralized UI configuration service for the Wholphin client.",
+    "overview": "Provides a server-managed Home layout recipe for Wholphin clients.",
+    "owner": "sysmoon14",
+    "category": "General",
+    "versions": [
+      {
+        "version": "0.1.0",
+        "changelog": "Initial release.",
+        "targetAbi": "10.11.6.0",
+        "sourceUrl": "https://github.com/sysmoon14/Wholphin-Companion/releases/download/v0.1.0/Wholphin-Companion_0.1.0.zip",
+        "checksum": "REPLACE_WITH_SHA256",
+        "timestamp": "2026-02-06T00:00:00Z"
+      }
+    ]
+  }
+]

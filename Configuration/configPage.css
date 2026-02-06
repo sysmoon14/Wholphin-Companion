@@ -1,0 +1,160 @@
+ .wholphin-page-header {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+     margin-bottom: 12px;
+ }
+ 
+ .wholphin-title {
+     font-size: 20px;
+     font-weight: 700;
+    color: #f2f2f2;
+ }
+ 
+ .wholphin-subtitle {
+    color: rgba(242, 242, 242, 0.7);
+ }
+ 
+ .wholphin-container {
+     display: flex;
+     flex-direction: column;
+     gap: 16px;
+ }
+ 
+ .wholphin-toolbar {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 12px;
+     padding: 14px;
+     border: 1px solid rgba(0, 0, 0, 0.08);
+     border-radius: 12px;
+     background: rgba(0, 0, 0, 0.02);
+     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    color: #f2f2f2;
+ }
+ 
+.wholphin-container .emby-button {
+    background-color: #00a4dc;
+    color: #ffffff;
+    border-color: #0093c4;
+}
+
+.wholphin-container .emby-button:hover {
+    background-color: #0093c4;
+    border-color: #0082ad;
+}
+
+.wholphin-container .emby-button:active {
+    background-color: #0082ad;
+    border-color: #007294;
+}
+
+ .wholphin-toolbar .selectContainer {
+     margin-bottom: 0;
+ }
+ 
+ .wholphin-toolbar .fieldDescription {
+    margin-top: 4px;
+    color: rgba(242, 242, 242, 0.7);
+ }
+ 
+ .wholphin-section {
+     border: 1px solid rgba(0, 0, 0, 0.08);
+     border-radius: 14px;
+     padding: 14px;
+    background: rgba(34, 34, 34, 0.96);
+    color: #f2f2f2;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+ }
+ 
+ .wholphin-section-header {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 12px;
+     padding-bottom: 12px;
+     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+ }
+ 
+.wholphin-section-handle {
+    cursor: grab;
+    font-weight: 700;
+    padding: 0 8px;
+    color: rgba(242, 242, 242, 0.7);
+}
+
+ .wholphin-section-header input[type="text"] {
+     min-width: 220px;
+     flex: 1 1 220px;
+ }
+ 
+ .wholphin-section-body {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     margin-top: 10px;
+ }
+ 
+ .wholphin-section-actions {
+     margin-top: 10px;
+ }
+ 
+ .wholphin-rows {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+ }
+ 
+ .wholphin-row {
+     display: grid;
+     grid-template-columns: auto 1.1fr 1.6fr 1.6fr auto;
+     gap: 12px;
+     align-items: center;
+     padding: 12px;
+     border: 1px solid rgba(0, 0, 0, 0.08);
+     border-radius: 12px;
+    background: rgba(44, 44, 44, 0.98);
+    color: #f2f2f2;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+ }
+ 
+ .wholphin-row select,
+ .wholphin-row input {
+     width: 100%;
+ }
+ 
+ .wholphin-row-handle {
+     cursor: grab;
+     font-weight: 700;
+     padding: 0 8px;
+    color: rgba(242, 242, 242, 0.7);
+ }
+ 
+ .wholphin-field {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+ }
+ 
+ .wholphin-field label {
+     font-size: 12px;
+     text-transform: uppercase;
+     letter-spacing: 0.04em;
+    color: rgba(242, 242, 242, 0.65);
+ }
+ 
+ .wholphin-row-remove {
+     justify-self: end;
+ }
+ 
+ .wholphin-empty {
+     padding: 12px;
+    color: rgba(242, 242, 242, 0.7);
+ }
+ 
+ @media (max-width: 900px) {
+     .wholphin-row {
+         grid-template-columns: auto 1fr;
+     }
+ }

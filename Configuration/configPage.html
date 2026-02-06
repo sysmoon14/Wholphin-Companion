@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Wholphin Companion</title>
+    <link rel="stylesheet" href="configurationpage?name=WholphinCompanion.css" />
+</head>
+<body>
+    <div id="WholphinCompanionConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="WholphinCompanionConfigForm">
+                    <div class="wholphin-container">
+                        <div class="wholphin-page-header">
+                            <div class="wholphin-title">Wholphin Companion</div>
+                            <div class="wholphin-subtitle">Design the Wholphin home screen layout per user or globally.</div>
+                        </div>
+                        <div class="wholphin-toolbar">
+                            <div class="selectContainer">
+                                <label class="selectLabel" for="ScopeSelect">Scope</label>
+                                <select is="emby-select" id="ScopeSelect" name="ScopeSelect" class="emby-select-withcolor emby-select"></select>
+                                <div class="fieldDescription">Global applies to all users unless overridden.</div>
+                            </div>
+                            <button is="emby-button" type="button" id="AddSectionButton" class="raised emby-button">
+                                <span>Add Section</span>
+                            </button>
+                        </div>
+                        <div id="SectionsContainer"></div>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+        <script src="configurationpage?name=WholphinCompanion.js"></script>
+    </div>
+</body>
+</html>
