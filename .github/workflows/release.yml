@@ -49,10 +49,10 @@ jobs:
             curl -L -o "$ZIP_NAME" "$SOURCE_URL" && break
             sleep 2
           done
-          SHA256="$(sha256sum "$ZIP_NAME" | awk '{print $1}')"
+          CHECKSUM="$(md5sum "$ZIP_NAME" | awk '{print $1}')"
           TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           CHANGELOG="$(printf '%s' "${{ github.event.release.body }}" | sed 's/\r//g')"
-          bash ./tools/update-manifest.sh "$VERSION" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
+          bash ./tools/update-manifest.sh "$VERSION" "$CHECKSUM" "$TIMESTAMP" "$CHANGELOG"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

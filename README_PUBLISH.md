@@ -20,16 +20,16 @@ From the repo root:
 zip -r "Wholphin-Companion_0.1.0.zip" "bin/Release/net9.0/Wholphin Companion"
 ```
 
-### Compute SHA256
+### Compute MD5
 
 macOS:
 ```
-shasum -a 256 "Wholphin-Companion_0.1.0.zip"
+md5 "Wholphin-Companion_0.1.0.zip"
 ```
 
 Linux:
 ```
-sha256sum "Wholphin-Companion_0.1.0.zip"
+md5sum "Wholphin-Companion_0.1.0.zip"
 ```
 
 ### Publish
@@ -38,7 +38,7 @@ sha256sum "Wholphin-Companion_0.1.0.zip"
 2. Upload `Wholphin-Companion_0.1.0.zip` to the release assets.
 3. Update `manifest.json`:
    - `sourceUrl` should match the release asset URL.
-   - `checksum` should be the SHA256 from above.
+   - `checksum` should be the MD5 from above.
    - `timestamp` should be ISO8601 UTC.
 4. Commit and push.
 
