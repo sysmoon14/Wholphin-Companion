@@ -33,27 +33,31 @@ jobs:
           echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Update manifest
-        run: |
-          ZIP_NAME="${{ env.ZIP_NAME }}"
-          SHA256="$(sha256sum "$ZIP_NAME" | awk '{print $1}')"
-          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          CHANGELOG="$(printf '%s' "${{ github.event.release.body }}" | sed 's/\r//g')"
-          bash ./tools/update-manifest.sh "${{ env.VERSION }}" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
-
-      - name: Commit manifest
-        run: |
-          if git status --porcelain | grep -q "manifest.json"; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout main
-            git add manifest.json
-            git commit -m "Update manifest for ${GITHUB_REF_NAME}"
-            git push origin HEAD:main
-          fi
-
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: ${{ env.ZIP_NAME }}
+
+      - name: Update manifest from release asset
+        run: |
+          VERSION="${{ env.VERSION }}"
+          ZIP_NAME="${{ env.ZIP_NAME }}"
+          SOURCE_URL="https://github.com/sysmoon14/Wholphin-Companion/releases/download/v${VERSION}/${ZIP_NAME}"
+
+          for i in 1 2 3 4 5; do
+            curl -L -o "$ZIP_NAME" "$SOURCE_URL" && break
+            sleep 2
+          done
+          SHA256="$(sha256sum "$ZIP_NAME" | awk '{print $1}')"
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          CHANGELOG="$(printf '%s' "${{ github.event.release.body }}" | sed 's/\r//g')"
+          bash ./tools/update-manifest.sh "$VERSION" "$SHA256" "$TIMESTAMP" "$CHANGELOG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git add manifest.json
+          git commit -m "Update manifest for v${VERSION}" || true
+          git push origin HEAD:main || true
