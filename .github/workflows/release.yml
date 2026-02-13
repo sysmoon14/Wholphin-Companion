@@ -29,7 +29,11 @@ jobs:
           VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
           ZIP_NAME="Wholphin-Companion_${VERSION}.zip"
-          zip -r "$ZIP_NAME" "bin/Release/net9.0/Wholphin Companion"
+          # Zip contents of plugin output folder at archive root (no bin/Release/net9.0/ path)
+          # so Jellyfin installs the four files into the plugin root, not a nested folder.
+          cd "bin/Release/net9.0/Wholphin Companion"
+          zip -r "${{ github.workspace }}/$ZIP_NAME" .
+          cd "${{ github.workspace }}"
           echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 

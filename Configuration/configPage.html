@@ -21,11 +21,22 @@
                                 <select is="emby-select" id="ScopeSelect" name="ScopeSelect" class="emby-select-withcolor emby-select"></select>
                                 <div class="fieldDescription">Global applies to all users unless overridden.</div>
                             </div>
-                            <button is="emby-button" type="button" id="AddSectionButton" class="raised emby-button">
-                                <span>Add Section</span>
-                            </button>
                         </div>
-                        <div id="SectionsContainer"></div>
+                        <div class="wholphin-tabs">
+                            <button type="button" class="wholphin-tab active" data-tab="HomeRows">Home Rows</button>
+                            <button type="button" class="wholphin-tab" data-tab="Settings">Client Settings</button>
+                        </div>
+                        <div id="HomeRowsPanel" class="wholphin-tab-panel active">
+                            <div class="wholphin-toolbar wholphin-toolbar-compact">
+                                <button is="emby-button" type="button" id="AddSectionButton" class="raised emby-button">
+                                    <span>Add Section</span>
+                                </button>
+                            </div>
+                            <div id="SectionsContainer"></div>
+                        </div>
+                        <div id="SettingsPanel" class="wholphin-tab-panel" aria-hidden="true">
+                            <div id="SettingsContainer"></div>
+                        </div>
                     </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">

@@ -22,6 +22,7 @@ namespace Jellyfin.Plugin.WholphinCompanion.Configuration
             {
                 new LayoutProfileEntry(LayoutProfile.GlobalKey, new LayoutProfile()),
             };
+            this.GlobalSettings = new Dictionary<string, string>();
         }
 
         /// <summary>
@@ -30,5 +31,11 @@ namespace Jellyfin.Plugin.WholphinCompanion.Configuration
         [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "Serialized plugin configuration.")]
         [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Serialized plugin configuration.")]
         public List<LayoutProfileEntry> LayoutProfiles { get; set; }
+
+        /// <summary>
+        /// Gets or sets device-wide Wholphin setting overrides (key -> value).
+        /// </summary>
+        [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Serialized plugin configuration.")]
+        public Dictionary<string, string> GlobalSettings { get; set; }
     }
 }

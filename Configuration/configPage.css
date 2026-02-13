@@ -70,13 +70,25 @@
  
  .wholphin-section-header {
      display: flex;
-     flex-wrap: wrap;
-     align-items: center;
-     gap: 12px;
-     padding-bottom: 12px;
+     flex-direction: column;
+     gap: 14px;
+     padding-bottom: 14px;
      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
  }
- 
+
+ .wholphin-section-header-row1 {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+ }
+
+ .wholphin-section-header-row2 {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: flex-end;
+     gap: 24px;
+ }
+
 .wholphin-section-handle {
     cursor: grab;
     font-weight: 700;
@@ -84,68 +96,118 @@
     color: rgba(242, 242, 242, 0.7);
 }
 
- .wholphin-section-header input[type="text"] {
-     min-width: 220px;
-     flex: 1 1 220px;
+ .wholphin-section-title {
+     flex: 1;
+     min-width: 0;
+     max-width: 400px;
  }
- 
+
+ .wholphin-section-remove {
+     flex-shrink: 0;
+ }
+
+ .wholphin-section-group {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: flex-end;
+     gap: 12px;
+ }
+
+ .wholphin-section-field,
+ .wholphin-section-shuffle-count {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+ }
+
+ .wholphin-section-field-label,
+ .wholphin-section-shuffle-count .wholphin-section-field-label {
+     font-size: 11px;
+     font-weight: 600;
+     text-transform: uppercase;
+     letter-spacing: 0.04em;
+     color: rgba(242, 242, 242, 0.65);
+ }
+
+ .wholphin-section-header .wholphin-visible-from,
+ .wholphin-section-header .wholphin-visible-to {
+     width: 150px;
+     min-width: 140px;
+ }
+
+ .wholphin-section-shuffle-count .wholphin-shuffle-row-count {
+     width: 72px;
+     min-width: 60px;
+ }
+
  .wholphin-section-body {
      display: flex;
      flex-direction: column;
-     gap: 8px;
-     margin-top: 10px;
+     gap: 10px;
+     margin-top: 12px;
  }
- 
+
  .wholphin-section-actions {
-     margin-top: 10px;
+     margin-top: 12px;
+     padding-top: 4px;
  }
- 
+
  .wholphin-rows {
      display: flex;
      flex-direction: column;
      gap: 8px;
  }
- 
+
  .wholphin-row {
      display: grid;
-     grid-template-columns: auto 1.1fr 1.6fr 1.6fr auto;
-     gap: 12px;
+     grid-template-columns: auto minmax(100px, 1fr) minmax(140px, 1.4fr) minmax(140px, 1.4fr) auto auto;
+     gap: 14px;
      align-items: center;
-     padding: 12px;
+     padding: 12px 14px;
      border: 1px solid rgba(0, 0, 0, 0.08);
-     border-radius: 12px;
-    background: rgba(44, 44, 44, 0.98);
-    color: #f2f2f2;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+     border-radius: 10px;
+     background: rgba(44, 44, 44, 0.98);
+     color: #f2f2f2;
+     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
  }
- 
+
  .wholphin-row select,
  .wholphin-row input {
      width: 100%;
+     min-width: 0;
  }
- 
+
  .wholphin-row-handle {
      cursor: grab;
      font-weight: 700;
-     padding: 0 8px;
-    color: rgba(242, 242, 242, 0.7);
+     padding: 0 6px;
+     color: rgba(242, 242, 242, 0.7);
+     align-self: center;
  }
- 
+
  .wholphin-field {
      display: flex;
      flex-direction: column;
      gap: 4px;
+     min-width: 0;
  }
- 
+
  .wholphin-field label {
-     font-size: 12px;
+     font-size: 11px;
+     font-weight: 600;
      text-transform: uppercase;
      letter-spacing: 0.04em;
-    color: rgba(242, 242, 242, 0.65);
+     color: rgba(242, 242, 242, 0.65);
  }
- 
+
+ .wholphin-row-hide-watched-wrap {
+     align-self: center;
+     white-space: nowrap;
+ }
+
  .wholphin-row-remove {
      justify-self: end;
+     flex-shrink: 0;
  }
  
  .wholphin-empty {
@@ -157,4 +219,314 @@
      .wholphin-row {
          grid-template-columns: auto 1fr;
      }
+ }
+
+ /* Tabs */
+ .wholphin-tabs {
+     display: flex;
+     gap: 0;
+     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+     margin-bottom: 12px;
+ }
+
+ .wholphin-tab {
+     padding: 10px 20px;
+     font-size: 14px;
+     font-weight: 500;
+     color: rgba(242, 242, 242, 0.7);
+     background: transparent;
+     border: none;
+     border-bottom: 2px solid transparent;
+     cursor: pointer;
+     margin-bottom: -1px;
+ }
+
+ .wholphin-tab:hover {
+     color: #f2f2f2;
+ }
+
+ .wholphin-tab.active {
+     color: #00a4dc;
+     border-bottom-color: #00a4dc;
+ }
+
+ .wholphin-tab-panel {
+     display: none;
+ }
+
+ .wholphin-tab-panel.active {
+     display: block;
+ }
+
+ .wholphin-toolbar-compact {
+     margin-bottom: 12px;
+ }
+
+ /* Settings panel */
+ .wholphin-settings-groups {
+     display: flex;
+     flex-direction: column;
+     gap: 24px;
+ }
+
+ .wholphin-settings-group {
+     border: 1px solid rgba(0, 0, 0, 0.08);
+     border-radius: 14px;
+     overflow: hidden;
+     background: rgba(34, 34, 34, 0.96);
+     color: #f2f2f2;
+     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+ }
+
+ .wholphin-settings-group-header {
+     display: flex;
+     align-items: center;
+     width: 100%;
+     padding: 14px 16px;
+     font: inherit;
+     font-size: 17px;
+     font-weight: 700;
+     color: #f2f2f2;
+     text-align: left;
+     background: rgba(0, 0, 0, 0.12);
+     border: none;
+     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+     cursor: pointer;
+     user-select: none;
+ }
+
+ .wholphin-settings-group-header:hover {
+     background: rgba(0, 0, 0, 0.08);
+ }
+
+ .wholphin-settings-group-toggle {
+     margin-right: 8px;
+     font-size: 12px;
+ }
+
+ .wholphin-settings-group-title {
+     flex: 1;
+     font-size: 17px;
+     font-weight: 700;
+     color: #f2f2f2;
+     letter-spacing: 0.02em;
+ }
+
+ .wholphin-settings-group-body {
+     padding: 12px 14px 14px 14px;
+     border-top: 1px solid rgba(0, 0, 0, 0.08);
+ }
+
+ .wholphin-settings-group.collapsed .wholphin-settings-group-body {
+     display: none;
+ }
+
+ .wholphin-settings-subgroup {
+     margin-top: 12px;
+     margin-left: 12px;
+     padding-left: 12px;
+     border-left: 2px solid rgba(0, 164, 220, 0.5);
+ }
+
+ .wholphin-settings-subgroup-title {
+     font-size: 14px;
+     font-weight: 600;
+     margin-bottom: 8px;
+     color: rgba(242, 242, 242, 0.9);
+ }
+
+ .wholphin-settings-fields {
+     display: flex;
+     flex-direction: column;
+     gap: 12px;
+ }
+
+ .wholphin-settings-field {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 12px;
+ }
+
+ .wholphin-settings-field label {
+     font-size: 13px;
+     font-weight: 600;
+     text-transform: uppercase;
+     letter-spacing: 0.05em;
+     color: rgba(242, 242, 242, 0.9);
+     min-width: 180px;
+ }
+
+ .wholphin-settings-field .wholphin-settings-control {
+     flex: 1 1 200px;
+ }
+
+ .wholphin-settings-field .wholphin-settings-control input[type="text"],
+ .wholphin-settings-field .wholphin-settings-control input[type="number"],
+ .wholphin-settings-field .wholphin-settings-control select {
+     width: 100%;
+     max-width: 320px;
+ }
+
+ .wholphin-settings-action-group {
+     display: flex;
+     flex-wrap: wrap;
+     gap: 12px;
+     align-items: center;
+ }
+
+ .wholphin-settings-action-note {
+     font-size: 12px;
+     color: rgba(242, 242, 242, 0.6);
+     font-style: italic;
+ }
+
+ .wholphin-settings-use-global-all {
+     margin-bottom: 16px;
+     padding: 12px 14px;
+     background: rgba(0, 0, 0, 0.12);
+     border-radius: 10px;
+     border: 1px solid rgba(0, 0, 0, 0.08);
+ }
+
+ .wholphin-settings-use-global-all .emby-checkbox-label {
+     font-weight: 600;
+     color: #f2f2f2;
+ }
+
+ .wholphin-settings-use-global-row {
+     margin-bottom: 4px;
+ }
+
+ .wholphin-settings-use-global-row .emby-checkbox-label {
+     font-size: 12px;
+     color: rgba(242, 242, 242, 0.7);
+ }
+
+ .wholphin-settings-field-disabled .wholphin-settings-control input:disabled,
+ .wholphin-settings-field-disabled .wholphin-settings-control select:disabled,
+ .wholphin-settings-field-disabled .wholphin-settings-control button:disabled {
+     opacity: 0.7;
+     cursor: not-allowed;
+ }
+
+ /* Seerr credentials modal */
+ .wholphin-modal-overlay {
+     display: none;
+     position: fixed;
+     inset: 0;
+     z-index: 10000;
+     background: rgba(0, 0, 0, 0.6);
+     align-items: center;
+     justify-content: center;
+ }
+
+ .wholphin-modal-overlay.open {
+     display: flex;
+ }
+
+ .wholphin-modal-dialog {
+     background: rgba(34, 34, 34, 0.98);
+     color: #f2f2f2;
+     border-radius: 14px;
+     padding: 20px;
+     min-width: 360px;
+     max-width: 90vw;
+     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+     border: 1px solid rgba(0, 0, 0, 0.08);
+ }
+
+ .wholphin-modal-title {
+     font-size: 18px;
+     font-weight: 600;
+     margin: 0 0 16px 0;
+     color: #f2f2f2;
+ }
+
+ .wholphin-modal-form {
+     display: flex;
+     flex-direction: column;
+     gap: 12px;
+     margin-bottom: 16px;
+ }
+
+ .wholphin-modal-field {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+ }
+
+ .wholphin-modal-field label {
+     font-size: 12px;
+     text-transform: uppercase;
+     letter-spacing: 0.04em;
+     color: rgba(242, 242, 242, 0.65);
+ }
+
+ .wholphin-modal-field input,
+ .wholphin-modal-field select {
+     width: 100%;
+ }
+
+ .wholphin-modal-actions {
+     display: flex;
+     gap: 12px;
+     justify-content: flex-end;
+ }
+
+ .wholphin-modal-overlay .emby-button {
+     background-color: #00a4dc;
+     color: #ffffff;
+     border-color: #0093c4;
+ }
+
+ .wholphin-modal-overlay .emby-button:hover {
+     background-color: #0093c4;
+     border-color: #0082ad;
+ }
+
+ .wholphin-modal-overlay .emby-button:active {
+     background-color: #0082ad;
+     border-color: #007294;
+ }
+
+ .wholphin-modal-description {
+     font-size: 13px;
+     color: rgba(242, 242, 242, 0.75);
+     margin: 0 0 12px 0;
+ }
+
+ .wholphin-modal-dialog-wide {
+     min-width: 420px;
+ }
+
+ .wholphin-nav-drawer-list {
+     display: flex;
+     flex-direction: column;
+     gap: 6px;
+     margin-bottom: 16px;
+     max-height: 50vh;
+     overflow-y: auto;
+ }
+
+ .wholphin-nav-drawer-row {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+     padding: 10px 12px;
+     background: rgba(0, 0, 0, 0.15);
+     border-radius: 8px;
+     border: 1px solid rgba(0, 0, 0, 0.08);
+ }
+
+ .wholphin-nav-drawer-handle {
+     cursor: grab;
+     font-weight: 700;
+     color: rgba(242, 242, 242, 0.5);
+     user-select: none;
+ }
+
+ .wholphin-nav-drawer-label {
+     flex: 1;
+     color: #f2f2f2;
  }

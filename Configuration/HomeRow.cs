@@ -41,6 +41,11 @@ namespace Jellyfin.Plugin.WholphinCompanion.Configuration
         public string? PluginId { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to exclude items the user has already watched when fetching this row.
+        /// </summary>
+        public bool HideWatchedItems { get; set; }
+
+        /// <summary>
         /// Gets or sets the additional endpoint parameters.
         /// </summary>
         [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "Serialized plugin configuration.")]

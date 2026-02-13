@@ -15,9 +15,12 @@ bin/Release/net9.0/Wholphin Companion/
 
 ### Package the release zip
 
-From the repo root:
+From the repo root. The zip must contain only the plugin files at the **root** of the archive (no `bin/Release/net9.0/` path), or Jellyfin will install a nested folder instead of the plugin files:
+
 ```
-zip -r "Wholphin-Companion_0.1.0.zip" "bin/Release/net9.0/Wholphin Companion"
+cd "bin/Release/net9.0/Wholphin Companion"
+zip -r "../../../../Wholphin-Companion_0.1.0.zip" .
+cd -
 ```
 
 ### Compute MD5

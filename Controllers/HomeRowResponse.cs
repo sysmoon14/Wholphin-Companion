@@ -35,6 +35,11 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
         public string? PluginId { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the app should exclude watched items when fetching this row (e.g. add IsPlayed=false to the API query).
+        /// </summary>
+        public bool HideWatchedItems { get; set; }
+
+        /// <summary>
         /// Gets the endpoint parameters.
         /// </summary>
         public Dictionary<string, string> EndpointParams { get; }

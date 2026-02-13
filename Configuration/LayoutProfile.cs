@@ -4,6 +4,9 @@
 
 namespace Jellyfin.Plugin.WholphinCompanion.Configuration
 {
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+
     /// <summary>
     /// Per-user or global layout profile.
     /// </summary>
@@ -22,6 +25,7 @@ namespace Jellyfin.Plugin.WholphinCompanion.Configuration
             this.HomeLayout = new HomeLayout();
             this.LibraryLayout = new LibraryLayout();
             this.ThemeSettings = new ThemeSettings();
+            this.UserSettings = new Dictionary<string, string>();
         }
 
         /// <summary>
@@ -38,5 +42,11 @@ namespace Jellyfin.Plugin.WholphinCompanion.Configuration
         /// Gets or sets the theme settings.
         /// </summary>
         public ThemeSettings ThemeSettings { get; set; }
+
+        /// <summary>
+        /// Gets or sets per-user Wholphin setting overrides (key -> value).
+        /// </summary>
+        [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Serialized plugin configuration.")]
+        public Dictionary<string, string> UserSettings { get; set; }
     }
 }

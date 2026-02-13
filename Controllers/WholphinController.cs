@@ -4,12 +4,14 @@
 
 namespace Jellyfin.Plugin.WholphinCompanion.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.CodeAnalysis;
     using System.Net.Http;
     using System.Security.Cryptography;
     using System.Text.Json;
+    using System.Text.Json.Nodes;
     using Jellyfin.Plugin.WholphinCompanion.Configuration;
     using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +24,16 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
     public class WholphinController : ControllerBase
     {
         private static readonly HttpClient SharedHttpClient = new HttpClient();
+
+        /// <summary>
+        /// Keys that appear only in the "Global (device-only)" section; returned in global object only.
+        /// </summary>
+        private static readonly HashSet<string> DeviceOnlySettingKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "sign_in_auto",
+            "update_url",
+            "max_bitrate",
+        };
 
         /// <summary>
         /// Returns the admin configuration from the JSON store.
@@ -89,6 +101,181 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
             return this.Ok(response);
         }
 
+        /// <summary>
+        /// Returns effective settings. Global contains only device-only keys. User contains all other settings
+        /// with inheritance applied (use_global_settings or use_global_keys).
+        /// </summary>
+        /// <param name="userId">Optional user id override.</param>
+        /// <returns>Global = device-only keys; User = everything else with effective values.</returns>
+        [HttpGet("Settings")]
+        public ActionResult<WholphinSettingsResponse> GetSettings([FromQuery] string? userId = null)
+        {
+            var store = WholphinCompanionPlugin.Instance?.ConfigStore;
+            var configuration = store?.Load();
+            if (configuration is null)
+            {
+                return this.Ok(new WholphinSettingsResponse());
+            }
+
+            var resolvedUserId = this.ResolveUserId(userId);
+            var globalSettings = configuration.GlobalSettings ?? new Dictionary<string, string>();
+            var profile = this.ResolveProfile(configuration, resolvedUserId);
+            var userSettings = profile?.UserSettings ?? new Dictionary<string, string>();
+
+            var useGlobalSettings = userSettings.TryGetValue("use_global_settings", out var ugs) && ugs == "true";
+            var useGlobalKeys = new HashSet<string>(StringComparer.Ordinal);
+            if (userSettings.TryGetValue("use_global_keys", out var ugk) && !string.IsNullOrEmpty(ugk))
+            {
+                try
+                {
+                    var arr = JsonSerializer.Deserialize<string[]>(ugk);
+                    if (arr != null)
+                    {
+                        foreach (var k in arr)
+                        {
+                            if (!string.IsNullOrEmpty(k))
+                            {
+                                useGlobalKeys.Add(k);
+                            }
+                        }
+                    }
+                }
+                catch (JsonException)
+                {
+                    // ignore
+                }
+            }
+
+            var globalOnly = new Dictionary<string, string>();
+            foreach (var key in DeviceOnlySettingKeys)
+            {
+                if (globalSettings.TryGetValue(key, out var val))
+                {
+                    globalOnly[key] = val;
+                }
+            }
+
+            var effective = new Dictionary<string, object?>();
+
+            foreach (var kvp in globalSettings)
+            {
+                if (DeviceOnlySettingKeys.Contains(kvp.Key))
+                {
+                    continue;
+                }
+
+                effective[kvp.Key] = kvp.Value;
+            }
+
+            foreach (var kvp in userSettings)
+            {
+                var key = kvp.Key;
+                var value = kvp.Value;
+                if (key == "use_global_settings" || key == "use_global_keys")
+                {
+                    continue;
+                }
+
+                if (DeviceOnlySettingKeys.Contains(key))
+                {
+                    continue;
+                }
+
+                if (key == "seerr_credentials" || key == "nav_drawer_items")
+                {
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        effective[key] = JsonNode.Parse(value);
+                    }
+                    catch (JsonException)
+                    {
+                        effective[key] = value;
+                    }
+
+                    continue;
+                }
+
+                if (useGlobalSettings)
+                {
+                    if (globalSettings.TryGetValue(key, out var globalVal))
+                    {
+                        effective[key] = globalVal;
+                    }
+                    else
+                    {
+                        effective[key] = value;
+                    }
+
+                    continue;
+                }
+
+                if (useGlobalKeys.Contains(key))
+                {
+                    if (globalSettings.TryGetValue(key, out var globalVal))
+                    {
+                        effective[key] = globalVal;
+                    }
+                    else
+                    {
+                        effective[key] = value;
+                    }
+                }
+                else
+                {
+                    effective[key] = value;
+                }
+            }
+
+            foreach (var kvp in userSettings)
+            {
+                if (effective.ContainsKey(kvp.Key))
+                {
+                    continue;
+                }
+
+                if (kvp.Key == "use_global_settings" || kvp.Key == "use_global_keys" || DeviceOnlySettingKeys.Contains(kvp.Key))
+                {
+                    continue;
+                }
+
+                var key = kvp.Key;
+                var value = kvp.Value;
+                if (key == "seerr_credentials" || key == "nav_drawer_items")
+                {
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        effective[key] = JsonNode.Parse(value);
+                    }
+                    catch (JsonException)
+                    {
+                        effective[key] = value;
+                    }
+                }
+                else
+                {
+                    effective[key] = value;
+                }
+            }
+
+            var response = new WholphinSettingsResponse
+            {
+                Global = globalOnly,
+                User = effective,
+            };
+
+            return this.Ok(response);
+        }
+
         private LayoutProfile ResolveProfile(PluginConfiguration configuration, string? userId)
         {
             if (userId is not null)
@@ -114,8 +301,15 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
             var response = new Collection<HomeSectionResponse>();
             var becauseYouWatchedIndex = 0;
 
+            var today = DateTime.UtcNow.Date;
+
             foreach (var section in profile.HomeLayout.Sections)
             {
+                if (!this.IsSectionVisibleToday(section, today))
+                {
+                    continue;
+                }
+
                 var rows = new List<HomeRowResponse>();
                 foreach (var row in section.HomeRows)
                 {
@@ -131,6 +325,7 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                         Type = this.ToRowTypeString(row.RowType),
                         Label = row.Label,
                         PluginId = row.PluginId,
+                        HideWatchedItems = row.HideWatchedItems,
                     };
 
                     foreach (var param in row.EndpointParams)
@@ -164,6 +359,10 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                 if (section.ShuffleRows)
                 {
                     this.ShuffleInPlace(rows);
+                    if (section.ShuffleRowCount.HasValue && section.ShuffleRowCount.Value > 0 && rows.Count > section.ShuffleRowCount.Value)
+                    {
+                        rows = rows.GetRange(0, section.ShuffleRowCount.Value);
+                    }
                 }
 
                 var sectionResponse = new HomeSectionResponse
@@ -307,6 +506,27 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                 "WatchItAgain" => "Watch it Again",
                 _ => nativeRowKey,
             };
+        }
+
+        private bool IsSectionVisibleToday(HomeSection section, DateTime today)
+        {
+            if (!string.IsNullOrWhiteSpace(section.VisibleFrom) && DateTime.TryParse(section.VisibleFrom, out var from))
+            {
+                if (today < from.Date)
+                {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(section.VisibleTo) && DateTime.TryParse(section.VisibleTo, out var to))
+            {
+                if (today > to.Date)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void ShuffleInPlace(List<HomeRowResponse> list)
