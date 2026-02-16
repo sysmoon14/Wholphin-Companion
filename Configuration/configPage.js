@@ -20,6 +20,7 @@ var WholphinCompanionConfig = {
 var currentConfig = null;
 var currentScopeKey = 'Global';
 var collectionCache = [];
+var libraryViews = [];
 var nativeRowOptions = [
     { key: 'ContinueWatching', label: 'Continue Watching' },
     { key: 'NextUp', label: 'Next Up' },
@@ -31,6 +32,44 @@ var nativeRowOptions = [
     { key: 'BecauseYouWatched', label: 'Because You Watched' },
     { key: 'WatchItAgain', label: 'Watch it Again' }
 ];
+
+var nativeRowOptionsMovies = [
+    { key: 'ContinueWatching', label: 'Continue Watching' },
+    { key: 'RecentlyAddedMovies', label: 'Recently Added Movies' },
+    { key: 'LatestMovies', label: 'Latest Movies' },
+    { key: 'BecauseYouWatched', label: 'Because You Watched' },
+    { key: 'WatchItAgain', label: 'Watch it Again' },
+    { key: 'Suggestions', label: 'Suggestions' },
+    { key: 'TopRatedUnwatched', label: 'Top Rated Unwatched' }
+];
+
+var nativeRowOptionsShows = [
+    { key: 'NextUp', label: 'Up Next' },
+    { key: 'ContinueWatching', label: 'Continue Watching' },
+    { key: 'ContinueWatchingCombined', label: 'Continue Watching (Combined)' },
+    { key: 'RecentlyAddedShows', label: 'Recently Added Shows' },
+    { key: 'LatestShows', label: 'Latest Shows' },
+    { key: 'RecentlyAddedEpisodes', label: 'Recently Added Episodes' },
+    { key: 'LatestEpisodes', label: 'Latest Episodes' },
+    { key: 'BecauseYouWatched', label: 'Because You Watched' },
+    { key: 'WatchItAgain', label: 'Watch it Again' },
+    { key: 'Suggestions', label: 'Suggestions' },
+    { key: 'TopRatedUnwatched', label: 'Top Rated Unwatched' }
+];
+
+function getNativeRowOptionsForContext(libraryType) {
+    if (!libraryType) { return nativeRowOptions; }
+    var t = String(libraryType).toLowerCase();
+    if (t === 'movies') { return nativeRowOptionsMovies; }
+    if (t === 'tvshows') { return nativeRowOptionsShows; }
+    return nativeRowOptions;
+}
+
+function getLibraryType(libraryId) {
+    if (!libraryId || !libraryViews.length) { return null; }
+    var lib = libraryViews.find(function(l) { return l.Id === libraryId; });
+    return (lib && lib.CollectionType) ? lib.CollectionType : null;
+}
 
 var maxBitrateOptions = [
     '500 kbps', '750 kbps', '1 Mbps', '2 Mbps', '3 Mbps', '5 Mbps', '8 Mbps', '10 Mbps',
@@ -177,8 +216,16 @@ function ensureConfigDefaults(config) {
         });
     }
     config.LayoutProfiles.forEach(function(entry) {
-        if (entry.Profile && (!entry.Profile.UserSettings || typeof entry.Profile.UserSettings !== 'object')) {
-            entry.Profile.UserSettings = {};
+        if (entry.Profile) {
+            if (!entry.Profile.UserSettings || typeof entry.Profile.UserSettings !== 'object') {
+                entry.Profile.UserSettings = {};
+            }
+            if (!entry.Profile.LibraryLayout || typeof entry.Profile.LibraryLayout !== 'object') {
+                entry.Profile.LibraryLayout = { LibrarySections: {} };
+            }
+            if (!entry.Profile.LibraryLayout.LibrarySections || typeof entry.Profile.LibraryLayout.LibrarySections !== 'object') {
+                entry.Profile.LibraryLayout.LibrarySections = {};
+            }
         }
     });
 }
@@ -186,7 +233,7 @@ function ensureConfigDefaults(config) {
 function createEmptyProfile() {
     return {
         HomeLayout: { Sections: [] },
-        LibraryLayout: {},
+        LibraryLayout: { LibrarySections: {} },
         ThemeSettings: {},
         UserSettings: {}
     };
@@ -308,7 +355,7 @@ function loadUsers() {
     globalOption.textContent = 'Global';
     scopeSelect.appendChild(globalOption);
 
-    ApiClient.getUsers().then(function(users) {
+    return ApiClient.getUsers().then(function(users) {
         users.forEach(function(user) {
             var option = document.createElement('option');
             option.value = user.Id;
@@ -345,7 +392,7 @@ function renderSections(profile) {
     }
 }
 
-function createSectionElement(section) {
+function createSectionElement(section, libraryId) {
     var sectionEl = document.createElement('div');
     sectionEl.className = 'wholphin-section';
 
@@ -446,8 +493,12 @@ function createSectionElement(section) {
     var sectionBody = document.createElement('div');
     sectionBody.className = 'wholphin-section-body';
 
+    var libraryType = libraryId ? getLibraryType(libraryId) : null;
+    var rowOptions = getNativeRowOptionsForContext(libraryType);
+    var defaultNativeKey = (rowOptions && rowOptions.length) ? rowOptions[0].key : 'ContinueWatching';
+
     (section.HomeRows || []).forEach(function(row) {
-        rowsContainer.appendChild(createRowElement(row));
+        rowsContainer.appendChild(createRowElement(row, libraryType));
     });
 
     var addRowButton = document.createElement('button');
@@ -457,12 +508,12 @@ function createSectionElement(section) {
     addRowButton.addEventListener('click', function() {
         rowsContainer.appendChild(createRowElement({
             RowType: 'System',
-            NativeRowKey: 'ContinueWatching',
+            NativeRowKey: defaultNativeKey,
             Label: '',
             PluginId: '',
             HideWatchedItems: false,
             EndpointParams: []
-        }));
+        }, libraryType));
     });
 
     sectionEl.appendChild(headerEl);
@@ -483,7 +534,7 @@ function createSectionElement(section) {
     return sectionEl;
 }
 
-function createRowElement(row) {
+function createRowElement(row, libraryType) {
     var rowEl = document.createElement('div');
     rowEl.className = 'wholphin-row';
 
@@ -507,17 +558,19 @@ function createRowElement(row) {
 
     typeSelect.value = row.RowType || 'System';
 
+    var optionsForContext = getNativeRowOptionsForContext(libraryType);
     var nativeSelect = document.createElement('select');
     nativeSelect.className = 'emby-select-withcolor emby-select wholphin-row-native';
     nativeSelect.is = 'emby-select';
-    nativeRowOptions.forEach(function(optionItem) {
+    optionsForContext.forEach(function(optionItem) {
         var option = document.createElement('option');
         option.value = optionItem.key;
         option.textContent = optionItem.label;
         nativeSelect.appendChild(option);
     });
 
-    var initialNativeKey = row.NativeRowKey || 'ContinueWatching';
+    var defaultKey = (optionsForContext && optionsForContext.length) ? optionsForContext[0].key : 'ContinueWatching';
+    var initialNativeKey = row.NativeRowKey || defaultKey;
     if (!row.NativeRowKey && Array.isArray(row.EndpointParams)) {
         row.EndpointParams.some(function(entry) {
             if (entry && entry.Key === 'NativeRow') {
@@ -527,7 +580,11 @@ function createRowElement(row) {
             return false;
         });
     }
-    nativeSelect.value = initialNativeKey;
+    if (optionsForContext.some(function(o) { return o.key === initialNativeKey; })) {
+        nativeSelect.value = initialNativeKey;
+    } else {
+        nativeSelect.value = defaultKey;
+    }
 
     var collectionSelect = document.createElement('select');
     collectionSelect.className = 'emby-select-withcolor emby-select wholphin-row-collection';
@@ -587,9 +644,12 @@ function createRowElement(row) {
     return rowEl;
 }
 
-function serializeSections() {
+function serializeSectionsFromContainer(containerEl, libraryId) {
     var sections = [];
-    var sectionEls = document.querySelectorAll('.wholphin-section');
+    if (!containerEl) { return sections; }
+    var libraryType = libraryId ? getLibraryType(libraryId) : null;
+    var nativeOptions = getNativeRowOptionsForContext(libraryType);
+    var sectionEls = containerEl.querySelectorAll('.wholphin-section');
 
     sectionEls.forEach(function(sectionEl) {
         var header = sectionEl.querySelector('.wholphin-section-header');
@@ -617,7 +677,7 @@ function serializeSections() {
             var label = '';
 
             if (rowType === 'System') {
-                var nativeOption = nativeRowOptions.find(function(option) {
+                var nativeOption = nativeOptions.find(function(option) {
                     return option.key === nativeKey;
                 });
                 label = nativeOption ? nativeOption.label : nativeKey;
@@ -649,12 +709,139 @@ function serializeSections() {
     return sections;
 }
 
+function serializeSections() {
+    return serializeSectionsFromContainer(document.querySelector('#SectionsContainer'));
+}
+
+function loadLibraries() {
+    var select = document.querySelector('#ScopeSelect');
+    if (!select) { libraryViews = []; return Promise.resolve(); }
+    var firstUserId = null;
+    for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value && select.options[i].value !== 'Global') {
+            firstUserId = select.options[i].value;
+            break;
+        }
+    }
+    if (!firstUserId) { libraryViews = []; return Promise.resolve(); }
+    return ApiClient.ajax({
+        url: ApiClient.getUrl('Users/' + firstUserId + '/Views'),
+        type: 'GET',
+        dataType: 'json'
+    }).then(function(response) {
+        var views = (response && response.Items) ? response.Items : (Array.isArray(response) ? response : []);
+        libraryViews = views.filter(function(lib) {
+            var t = (lib && lib.CollectionType) ? String(lib.CollectionType).toLowerCase() : '';
+            return t !== 'boxsets';
+        });
+        return libraryViews;
+    }).catch(function() {
+        libraryViews = [];
+    });
+}
+
+function buildLibraryTabsAndPanels() {
+    var tabsContainer = document.querySelector('.wholphin-tabs');
+    var settingsPanel = document.querySelector('#SettingsPanel');
+    if (!tabsContainer || !settingsPanel) { return; }
+
+    document.querySelectorAll('.wholphin-tab-library').forEach(function(el) { el.remove(); });
+    document.querySelectorAll('.wholphin-library-panel').forEach(function(el) { el.remove(); });
+
+    libraryViews.forEach(function(lib) {
+        if (!lib || !lib.Id) { return; }
+        var libId = lib.Id;
+        var libName = lib.Name || libId;
+
+        var tabBtn = document.createElement('button');
+        tabBtn.type = 'button';
+        tabBtn.className = 'wholphin-tab wholphin-tab-library';
+        tabBtn.setAttribute('data-tab', 'LibraryRows_' + libId);
+        tabBtn.textContent = libName + ' Rows';
+        var settingsTab = tabsContainer.querySelector('.wholphin-tab[data-tab="Settings"]');
+        tabsContainer.insertBefore(tabBtn, settingsTab);
+
+        var panel = document.createElement('div');
+        panel.id = 'LibraryRowsPanel_' + libId;
+        panel.className = 'wholphin-tab-panel wholphin-library-panel';
+        panel.setAttribute('aria-hidden', 'true');
+        var toolbar = document.createElement('div');
+        toolbar.className = 'wholphin-toolbar wholphin-toolbar-compact';
+        var addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.setAttribute('is', 'emby-button');
+        addBtn.className = 'raised emby-button library-add-section';
+        addBtn.setAttribute('data-library-id', libId);
+        addBtn.innerHTML = '<span>Add Section</span>';
+        addBtn.addEventListener('click', function() {
+            var container = document.querySelector('#LibrarySectionsContainer_' + libId);
+            if (!container) { return; }
+            container.appendChild(createSectionElement({
+                Title: '',
+                ShuffleRows: false,
+                VisibleFrom: null,
+                VisibleTo: null,
+                ShuffleRowCount: null,
+                HomeRows: []
+            }, libId));
+        });
+        toolbar.appendChild(addBtn);
+        panel.appendChild(toolbar);
+        var sectionsContainer = document.createElement('div');
+        sectionsContainer.id = 'LibrarySectionsContainer_' + libId;
+        panel.appendChild(sectionsContainer);
+        settingsPanel.parentNode.insertBefore(panel, settingsPanel);
+    });
+
+    document.querySelectorAll('.wholphin-tab-library').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            switchTab(btn.getAttribute('data-tab'));
+        });
+    });
+}
+
+function renderLibrarySections(libraryId, profile) {
+    var container = document.querySelector('#LibrarySectionsContainer_' + libraryId);
+    if (!container) { return; }
+    container.innerHTML = '';
+
+    var libLayout = (profile.LibraryLayout && profile.LibraryLayout.LibrarySections && profile.LibraryLayout.LibrarySections[libraryId])
+        ? profile.LibraryLayout.LibrarySections[libraryId]
+        : null;
+    var sections = (libLayout && libLayout.Sections) ? libLayout.Sections : [];
+
+    if (!sections.length) {
+        var emptyEl = document.createElement('div');
+        emptyEl.className = 'wholphin-empty';
+        emptyEl.textContent = 'No sections yet. Add one to define rows for this library.';
+        container.appendChild(emptyEl);
+        return;
+    }
+
+    sections.forEach(function(section) {
+        container.appendChild(createSectionElement(section, libraryId));
+    });
+
+    if (window.Sortable) {
+        Sortable.create(container, {
+            handle: '.wholphin-section-handle',
+            animation: 150
+        });
+    }
+}
+
 function loadScope(scopeKey) {
     currentScopeKey = scopeKey;
     var profile = ensureProfile(scopeKey);
     renderSections(profile);
+    libraryViews.forEach(function(lib) {
+        if (lib && lib.Id) { renderLibrarySections(lib.Id, profile); }
+    });
     if (currentTab === 'Settings') {
         renderSettings();
+    } else if (currentTab && currentTab.indexOf('LibraryRows_') === 0) {
+        var libId = currentTab.replace('LibraryRows_', '');
+        renderLibrarySections(libId, profile);
     }
 }
 
@@ -666,12 +853,18 @@ function switchTab(tabName) {
         t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
     });
     document.querySelectorAll('.wholphin-tab-panel').forEach(function(p) {
-        var isActive = (tabName === 'HomeRows' && p.id === 'HomeRowsPanel') || (tabName === 'Settings' && p.id === 'SettingsPanel');
+        var isActive = (tabName === 'HomeRows' && p.id === 'HomeRowsPanel') ||
+            (tabName === 'Settings' && p.id === 'SettingsPanel') ||
+            (tabName && tabName.indexOf('LibraryRows_') === 0 && p.id === 'LibraryRowsPanel_' + tabName.replace('LibraryRows_', ''));
         p.classList.toggle('active', isActive);
         p.setAttribute('aria-hidden', isActive ? 'false' : 'true');
     });
     if (tabName === 'Settings') {
         renderSettings();
+    } else if (tabName && tabName.indexOf('LibraryRows_') === 0) {
+        var libId = tabName.replace('LibraryRows_', '');
+        var profile = ensureProfile(currentScopeKey);
+        renderLibrarySections(libId, profile);
     }
 }
 
@@ -1418,11 +1611,17 @@ document.querySelector('#WholphinCompanionConfigPage')
         }).then(function(config) {
             currentConfig = config || createEmptyProfile();
             ensureConfigDefaults(currentConfig);
-            loadUsers();
-            loadCollections().then(function() {
-                loadScope(currentScopeKey);
-                Dashboard.hideLoadingMsg();
-            });
+            return loadUsers();
+        }).then(function() {
+            return loadCollections();
+        }).then(function() {
+            return loadLibraries();
+        }).then(function() {
+            buildLibraryTabsAndPanels();
+            loadScope(currentScopeKey);
+            Dashboard.hideLoadingMsg();
+        }).catch(function() {
+            Dashboard.hideLoadingMsg();
         });
     });
 
@@ -1449,9 +1648,15 @@ document.querySelector('#WholphinCompanionConfigForm')
         e.preventDefault();
         Dashboard.showLoadingMsg();
         try {
-            var sections = serializeSections();
             var profile = ensureProfile(currentScopeKey);
-            profile.HomeLayout.Sections = sections;
+            profile.HomeLayout.Sections = serializeSections();
+            if (!profile.LibraryLayout) { profile.LibraryLayout = { LibrarySections: {} }; }
+            if (!profile.LibraryLayout.LibrarySections) { profile.LibraryLayout.LibrarySections = {}; }
+            libraryViews.forEach(function(lib) {
+                if (!lib || !lib.Id) { return; }
+                var container = document.querySelector('#LibrarySectionsContainer_' + lib.Id);
+                profile.LibraryLayout.LibrarySections[lib.Id] = { Sections: serializeSectionsFromContainer(container, lib.Id) };
+            });
 
             if (currentTab === 'Settings') {
                 var settingsData = serializeSettings();

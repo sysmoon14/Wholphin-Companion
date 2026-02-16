@@ -90,12 +90,37 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
             var profile = this.ResolveProfile(configuration, resolvedUserId);
             var becauseYouWatchedCount = this.CountBecauseYouWatchedRows(profile);
             var becauseYouWatchedItems = this.GetBecauseYouWatchedItemIds(becauseYouWatchedUserId, becauseYouWatchedCount);
-            var layout = this.BuildLayoutResponse(profile, becauseYouWatchedItems);
+            var today = DateTime.UtcNow.Date;
 
             var response = new WholphinConfigResponse();
-            foreach (var section in layout)
+            foreach (var section in this.BuildSectionsResponse(profile.HomeLayout.Sections, becauseYouWatchedItems, today))
             {
                 response.Layout.Add(section);
+            }
+
+            if (profile.LibraryLayout?.LibrarySections != null)
+            {
+                foreach (var kvp in profile.LibraryLayout.LibrarySections)
+                {
+                    var viewId = kvp.Key;
+                    var homeLayout = kvp.Value;
+                    if (string.IsNullOrWhiteSpace(viewId) || homeLayout?.Sections == null)
+                    {
+                        continue;
+                    }
+
+                    var libraryBecauseYouWatchedCount = this.CountBecauseYouWatchedRowsInSections(homeLayout.Sections);
+                    var libraryBecauseYouWatchedItems = this.GetBecauseYouWatchedItemIds(
+                        becauseYouWatchedUserId,
+                        libraryBecauseYouWatchedCount,
+                        viewId);
+
+                    var librarySections = this.BuildSectionsResponse(
+                        homeLayout.Sections,
+                        libraryBecauseYouWatchedItems,
+                        today);
+                    response.LibraryLayouts[viewId] = librarySections;
+                }
             }
 
             return this.Ok(response);
@@ -296,14 +321,15 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
             return new LayoutProfile();
         }
 
-        private Collection<HomeSectionResponse> BuildLayoutResponse(LayoutProfile profile, List<string> becauseYouWatchedItems)
+        private List<HomeSectionResponse> BuildSectionsResponse(
+            IList<HomeSection> sections,
+            List<string> becauseYouWatchedItems,
+            DateTime today)
         {
-            var response = new Collection<HomeSectionResponse>();
+            var response = new List<HomeSectionResponse>();
             var becauseYouWatchedIndex = 0;
 
-            var today = DateTime.UtcNow.Date;
-
-            foreach (var section in profile.HomeLayout.Sections)
+            foreach (var section in sections)
             {
                 if (!this.IsSectionVisibleToday(section, today))
                 {
@@ -313,13 +339,6 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                 var rows = new List<HomeRowResponse>();
                 foreach (var row in section.HomeRows)
                 {
-                    if (row.RowType == HomeRowType.System
-                        && string.Equals(row.NativeRowKey, "BecauseYouWatched", System.StringComparison.Ordinal)
-                        && becauseYouWatchedIndex >= becauseYouWatchedItems.Count)
-                    {
-                        continue;
-                    }
-
                     var responseRow = new HomeRowResponse
                     {
                         Type = this.ToRowTypeString(row.RowType),
@@ -384,8 +403,13 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
 
         private int CountBecauseYouWatchedRows(LayoutProfile profile)
         {
+            return this.CountBecauseYouWatchedRowsInSections(profile.HomeLayout.Sections);
+        }
+
+        private int CountBecauseYouWatchedRowsInSections(IList<HomeSection> sections)
+        {
             var count = 0;
-            foreach (var section in profile.HomeLayout.Sections)
+            foreach (var section in sections)
             {
                 foreach (var row in section.HomeRows)
                 {
@@ -402,6 +426,11 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
 
         private List<string> GetBecauseYouWatchedItemIds(string? userId, int count)
         {
+            return this.GetBecauseYouWatchedItemIds(userId, count, null);
+        }
+
+        private List<string> GetBecauseYouWatchedItemIds(string? userId, int count, string? parentId)
+        {
             var results = new Collection<string>();
             if (count <= 0 || string.IsNullOrWhiteSpace(userId) || !this.Request.Host.HasValue)
             {
@@ -410,12 +439,24 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
 
             var apiKey = this.TryGetApiKey();
             var baseUrl = $"{this.Request.Scheme}://{this.Request.Host.Value}";
+
+            // When scoped to a library (parentId set), include Episode so we get played episodes in Shows libraries.
+            // For Episodes we use SeriesId as the seed so "Because you watched" gets a Series id.
+            var includeTypes = string.IsNullOrWhiteSpace(parentId)
+                ? "Movie,Series"
+                : "Movie,Series,Episode";
             var url = $"{baseUrl}/Users/{userId}/Items"
-                + $"?IncludeItemTypes=Movie,Series&Filters=IsPlayed&Recursive=true&SortBy=DatePlayed&SortOrder=Descending&Limit={count + 10}";
+                + "?IncludeItemTypes=" + includeTypes
+                + "&Filters=IsPlayed&Recursive=true&SortBy=DatePlayed&SortOrder=Descending&Limit=" + (count + 20);
+
+            if (!string.IsNullOrWhiteSpace(parentId))
+            {
+                url += "&ParentId=" + System.Uri.EscapeDataString(parentId);
+            }
 
             if (!string.IsNullOrWhiteSpace(apiKey))
             {
-                url += $"&api_key={System.Uri.EscapeDataString(apiKey)}";
+                url += "&api_key=" + System.Uri.EscapeDataString(apiKey);
             }
 
             var requestUri = new System.Uri(url, System.UriKind.Absolute);
@@ -453,15 +494,13 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                 return new List<string>();
             }
 
+            var seenIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var item in itemsElement.EnumerateArray())
             {
-                if (item.TryGetProperty("Id", out var idElement) && idElement.ValueKind == JsonValueKind.String)
+                var seedId = this.GetBecauseYouWatchedSeedId(item);
+                if (!string.IsNullOrWhiteSpace(seedId) && seenIds.Add(seedId))
                 {
-                    var idValue = idElement.GetString();
-                    if (!string.IsNullOrWhiteSpace(idValue))
-                    {
-                        results.Add(idValue);
-                    }
+                    results.Add(seedId);
                 }
             }
 
@@ -478,6 +517,40 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
             }
 
             return new List<string>(results);
+        }
+
+        /// <summary>
+        /// Gets the item id to use as a "Because you watched" seed. For Episode items returns SeriesId so the client gets a Series id; otherwise returns the item Id.
+        /// </summary>
+        private string? GetBecauseYouWatchedSeedId(JsonElement item)
+        {
+            if (!item.TryGetProperty("Id", out var idElement) || idElement.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            var type = string.Empty;
+            if (item.TryGetProperty("Type", out var typeElement) && typeElement.ValueKind == JsonValueKind.String)
+            {
+                type = typeElement.GetString() ?? string.Empty;
+            }
+
+            if (string.Equals(type, "Episode", StringComparison.OrdinalIgnoreCase))
+            {
+                // Use SeriesId (PascalCase or camelCase) so "Because you watched" gets a Series id.
+                if ((item.TryGetProperty("SeriesId", out var sid) || item.TryGetProperty("seriesId", out sid))
+                    && sid.ValueKind == JsonValueKind.String)
+                {
+                    var seriesId = sid.GetString();
+                    if (!string.IsNullOrWhiteSpace(seriesId))
+                    {
+                        return seriesId;
+                    }
+                }
+            }
+
+            var idValue = idElement.GetString();
+            return string.IsNullOrWhiteSpace(idValue) ? null : idValue;
         }
 
         private string ToRowTypeString(HomeRowType rowType)
@@ -500,10 +573,14 @@ namespace Jellyfin.Plugin.WholphinCompanion.Controllers
                 "ContinueWatchingCombined" => "Continue Watching (Combined)",
                 "RecentlyAddedMovies" => "Recently Added Movies",
                 "RecentlyAddedShows" => "Recently Added Shows",
+                "RecentlyAddedEpisodes" => "Recently Added Episodes",
                 "LatestMovies" => "Latest Movies",
                 "LatestShows" => "Latest Shows",
+                "LatestEpisodes" => "Latest Episodes",
                 "BecauseYouWatched" => "Because You Watched",
                 "WatchItAgain" => "Watch it Again",
+                "Suggestions" => "Suggestions",
+                "TopRatedUnwatched" => "Top Rated Unwatched",
                 _ => nativeRowKey,
             };
         }
