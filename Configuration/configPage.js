@@ -84,9 +84,9 @@ var settingsSchema = {
         {
             title: 'Global (device-only)',
             fields: [
-                { key: 'sign_in_auto', label: 'Sign in automatically', type: 'boolean', default: 'true' },
+                { key: 'sign_in_auto', label: 'Sign in automatically', type: 'boolean', default: 'false' },
                 { key: 'update_url', label: 'Update URL', type: 'string', default: 'https://api.github.com/repos/sysmoon14/Wholphin/releases/latest' },
-                { key: 'max_bitrate', label: 'Max bitrate', type: 'choice', options: maxBitrateOptions, defaultIndex: 17 }
+                { key: 'max_bitrate', label: 'Max bitrate', type: 'choice', options: maxBitrateOptions, defaultIndex: 22 }
             ]
         }
     ],
@@ -100,7 +100,7 @@ var settingsSchema = {
                 ] },
                 { key: 'max_homepage_items', label: 'Max items on home page rows', type: 'integer', min: 5, max: 50, step: 1, default: 25 },
                 { key: 'hide_settings_cog', label: 'Hide settings cog', type: 'boolean', default: 'false' },
-                { key: 'allow_settings_override', label: 'Allow settings override', type: 'boolean', default: 'true' },
+                { key: 'allow_settings_override', label: 'Allow settings override', type: 'boolean', default: 'false' },
                 { key: 'rewatch_next_up', label: 'Rewatch next up', type: 'boolean', default: 'false' },
                 { key: 'backdrop_display', label: 'Backdrop display', type: 'choice', options: ['Image with dynamic color', 'Image only', 'None'], defaultIndex: 0 }
             ]
@@ -108,11 +108,11 @@ var settingsSchema = {
         {
             title: 'Appearance',
             fields: [
-                { key: 'play_theme_music', label: 'Play theme music', type: 'choice', options: ['Disabled', 'Lowest', 'Low', 'Medium', 'High', 'Full'], defaultIndex: 3 },
+                { key: 'play_theme_music', label: 'Play theme music', type: 'choice', options: ['Disabled', 'Lowest', 'Low', 'Medium', 'High', 'Full'], defaultIndex: 0 },
                 { key: 'remember_selected_tab', label: 'Remember selected tab', type: 'boolean', default: 'true' },
-                { key: 'app_theme', label: 'App theme (color)', type: 'choice', options: ['Purple', 'Blue', 'Green', 'Orange', 'Bold Blue', 'Black'] },
+                { key: 'app_theme', label: 'App theme (color)', type: 'choice', options: ['Purple', 'Blue', 'Green', 'Orange', 'Bold Blue', 'Black'], defaultIndex: 5 },
                 { key: 'show_clock', label: 'Show clock', type: 'boolean', default: 'true' },
-                { key: 'combined_search_results', label: 'Combined search results', type: 'boolean', default: 'false' },
+                { key: 'combined_search_results', label: 'Combined search results', type: 'boolean', default: 'true' },
                 { key: 'nav_drawer_switch_on_focus', label: 'Switch nav drawer pages on focus', type: 'boolean', default: 'true' }
             ]
         },
@@ -136,17 +136,17 @@ var settingsSchema = {
                 { key: 'auto_play_next_delay', label: 'Delay before playing next up', type: 'integer', min: 0, max: 60, step: 5, default: 15, unit: 'seconds' },
                 { key: 'show_next_up_when', label: 'Show next up', type: 'choice', options: ['At the end of playback', 'During end credits/outro'], defaultIndex: 0 },
                 { key: 'pass_out_protection', label: 'Passout Protection', type: 'integer', min: 0, max: 3, step: 1, default: 2, unit: 'hours' },
-                { key: 'skip_intro_behavior', label: 'Skip intro behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 1 },
-                { key: 'skip_outro_behavior', label: 'Skip outro behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 1 },
-                { key: 'skip_commercials_behavior', label: 'Skip commercials behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 1 },
-                { key: 'skip_previews_behavior', label: 'Skip previews behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 0 },
-                { key: 'skip_recap_behavior', label: 'Skip recap behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 0 }
+                { key: 'skip_intro_behavior', label: 'Skip intro behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 2 },
+                { key: 'skip_outro_behavior', label: 'Skip outro behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 2 },
+                { key: 'skip_commercials_behavior', label: 'Skip commercials behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 2 },
+                { key: 'skip_previews_behavior', label: 'Skip previews behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 2 },
+                { key: 'skip_recap_behavior', label: 'Skip recap behavior', type: 'choice', options: ['Ignore', 'Skip automatically', 'Ask to skip'], defaultIndex: 2 }
             ]
         },
         {
             title: 'Live TV',
             fields: [
-                { key: 'show_details', label: 'Show details', type: 'boolean', default: 'true' },
+                { key: 'show_details', label: 'Show details', type: 'boolean', default: 'false' },
                 { key: 'favorite_channels_at_beginning', label: 'Favorite channels at beginning', type: 'boolean', default: 'true' },
                 { key: 'sort_channels_recently_watched', label: 'Sort channels by recently watched', type: 'boolean', default: 'false' },
                 { key: 'color_code_programs', label: 'Color code programs', type: 'boolean', default: 'true' }
@@ -173,6 +173,24 @@ var settingsSchema = {
         { key: 'reset', label: 'Reset', type: 'action' }
     ]
 };
+
+function getPracticalDefaultValues() {
+    var defaults = {};
+    function fromField(f) {
+        if (!f.key || f.type === 'action' || f.type === 'action_group' || f.type === 'subsection') { return; }
+        if (f.type === 'boolean') { defaults[f.key] = (f.default === 'true') ? 'true' : 'false'; return; }
+        if (f.type === 'integer' && f.default !== undefined) { defaults[f.key] = String(f.default); return; }
+        if (f.type === 'choice' && f.defaultIndex !== undefined) { defaults[f.key] = String(f.defaultIndex); return; }
+        if (f.type === 'string' && f.default !== undefined) { defaults[f.key] = f.default; return; }
+    }
+    settingsSchema.global.forEach(function(g) { (g.fields || []).forEach(fromField); });
+    settingsSchema.user.forEach(function(g) {
+        if (g.subgroup === 'subtitle') {
+            (settingsSchema.subtitle || []).forEach(function(sf) { if (sf.key && sf.type !== 'action') { fromField(sf); } });
+        } else { (g.fields || []).forEach(fromField); }
+    });
+    return defaults;
+}
 
 function getGlobalGroups() {
     return settingsSchema.global.concat(settingsSchema.user);
@@ -208,6 +226,10 @@ function ensureConfigDefaults(config) {
     }
     if (!config.GlobalSettings || typeof config.GlobalSettings !== 'object') {
         config.GlobalSettings = {};
+    }
+    var globalKeys = Object.keys(config.GlobalSettings);
+    if (globalKeys.length === 0) {
+        config.GlobalSettings = Object.assign({}, getPracticalDefaultValues());
     }
     if (!findProfileEntry('Global')) {
         config.LayoutProfiles.push({
@@ -732,7 +754,7 @@ function loadLibraries() {
         var views = (response && response.Items) ? response.Items : (Array.isArray(response) ? response : []);
         libraryViews = views.filter(function(lib) {
             var t = (lib && lib.CollectionType) ? String(lib.CollectionType).toLowerCase() : '';
-            return t !== 'boxsets';
+            return t === 'movies' || t === 'tvshows';
         });
         return libraryViews;
     }).catch(function() {
@@ -1107,7 +1129,7 @@ function renderSettings() {
     var groups = isGlobal ? getGlobalGroups() : settingsSchema.user;
     var globalSettingKeys = getGlobalSettingKeys();
 
-    var useGlobalSettings = !isGlobal && (store[USE_GLOBAL_SETTINGS_KEY] === 'true');
+    var useGlobalSettings = !isGlobal && (store[USE_GLOBAL_SETTINGS_KEY] !== 'false');
     var useGlobalKeysList = isGlobal ? [] : parseUseGlobalKeys(store);
     var useGlobalKeys = {};
     useGlobalKeysList.forEach(function(k) { useGlobalKeys[k] = true; });
