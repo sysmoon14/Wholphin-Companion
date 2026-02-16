@@ -18,8 +18,8 @@ jq --arg version "$VERSION" \
    map(
      .versions = (
        .versions
-       | map(select(.version != $version))
-         + [{
+      | map(select(.version != $version))
+        + [{
            version: $version,
            changelog: $changelog,
            targetAbi: "10.11.6.0",
@@ -27,7 +27,7 @@ jq --arg version "$VERSION" \
            checksum: $checksum,
            timestamp: $timestamp
          }]
-       | sort_by(.version)
+      | sort_by(.timestamp) | reverse
      )
    )
    ' "$MANIFEST" > "$MANIFEST.tmp"
