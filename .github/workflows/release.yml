@@ -38,10 +38,12 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2.4.2
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.event.release.tag_name }}
-          files: ${{ env.ZIP_NAME }}
+          tag: ${{ github.event.release.tag_name }}
+          artifacts: ${{ env.ZIP_NAME }}
+          allowUpdates: true
+          omitBodyDuringUpdate: true
 
       - name: Update manifest from release asset
         run: |
